@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Central132 Clave Translator",
+  "version": "0.1.0",
+  "description": "Agrega traducciones humanas de claves de emergencia en central132.cl.",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Central132 Clave Translator",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://central132.cl/*"],
+      "js": ["src/content.js"],
+      "css": ["src/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/data/codes.full.json"],
+      "matches": ["https://central132.cl/*"]
+    }
+  ]
+}
