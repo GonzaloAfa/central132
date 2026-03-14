@@ -298,6 +298,23 @@ function formatOrdinal(number) {
   return `${number}ª Cía.`;
 }
 
+function buildUnitSummaryText(unit) {
+  let text = unit.typeName;
+  if (unit.matches.length === 1) {
+    const m = unit.matches[0];
+    text += ` · ${formatOrdinal(unit.number)} "${m.company.name}" (${m.cuerpo})`;
+    if (m.company.communes && m.company.communes.length > 0) {
+      text += ` · ${m.company.communes.join(", ")}`;
+    }
+    if (m.company.specialty) {
+      text += ` · ${m.company.specialty}`;
+    }
+  } else if (unit.matches.length > 1) {
+    text += ` · ${formatOrdinal(unit.number)} — Posibles: ${unit.matches.map((m) => m.cuerpo).join(", ")}`;
+  }
+  return text;
+}
+
 function buildUnitsBlock(popoverEl, resolved) {
   const contentEl = popoverEl.querySelector(".popover-content");
   if (!contentEl) {
@@ -312,37 +329,43 @@ function buildUnitsBlock(popoverEl, resolved) {
   const block = document.createElement("div");
   block.className = UNITS_CLASS;
 
-  const kicker = document.createElement("div");
-  kicker.className = `${UNITS_CLASS}-kicker`;
-  kicker.textContent = "Unidades en el lugar";
-  block.appendChild(kicker);
+  const header = document.createElement("div");
+  header.className = `${UNITS_CLASS}-header`;
+
+  const codes = resolved.map((u) => u.raw).join(", ");
+  const label = document.createElement("span");
+  label.className = `${UNITS_CLASS}-label`;
+  label.textContent = `Unidades: ${codes}`;
+
+  const toggle = document.createElement("button");
+  toggle.className = `${UNITS_CLASS}-toggle`;
+  toggle.textContent = "Ver detalle ▸";
+  toggle.type = "button";
+
+  header.appendChild(label);
+  header.appendChild(toggle);
+  block.appendChild(header);
+
+  const details = document.createElement("div");
+  details.className = `${UNITS_CLASS}-details`;
 
   for (const unit of resolved) {
     const item = document.createElement("div");
     item.className = `${UNITS_CLASS}-item`;
 
-    const label = document.createElement("strong");
-    label.textContent = unit.raw;
-    item.appendChild(label);
-
-    let description = ` — ${unit.typeName}`;
-
-    if (unit.matches.length === 1) {
-      const m = unit.matches[0];
-      description += ` · ${formatOrdinal(unit.number)} "${m.company.name}" (${m.cuerpo})`;
-      if (m.company.communes && m.company.communes.length > 0) {
-        description += ` · ${m.company.communes.join(", ")}`;
-      }
-      if (m.company.specialty) {
-        description += ` · ${m.company.specialty}`;
-      }
-    } else if (unit.matches.length > 1) {
-      description += ` · ${formatOrdinal(unit.number)} — Posibles: ${unit.matches.map((m) => m.cuerpo).join(", ")}`;
-    }
-
-    item.appendChild(document.createTextNode(description));
-    block.appendChild(item);
+    const unitLabel = document.createElement("strong");
+    unitLabel.textContent = unit.raw;
+    item.appendChild(unitLabel);
+    item.appendChild(document.createTextNode(` — ${buildUnitSummaryText(unit)}`));
+    details.appendChild(item);
   }
+
+  block.appendChild(details);
+
+  toggle.addEventListener("click", () => {
+    const expanded = details.classList.toggle(`${UNITS_CLASS}-details--open`);
+    toggle.textContent = expanded ? "Ocultar ▾" : "Ver detalle ▸";
+  });
 
   contentEl.appendChild(block);
 }
