@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -224,23 +224,71 @@ function compareCodes(a, b) {
   return 0;
 }
 
+async function loadJsonFile(filePath) {
+  try {
+    const content = await readFile(filePath, "utf8");
+    return JSON.parse(content);
+  } catch {
+    return {};
+  }
+}
+
 async function buildDictionary() {
-  const response = await fetch(SOURCE_URL);
-  if (!response.ok) {
-    throw new Error(`Could not fetch source URL. HTTP ${response.status}`);
+  const dictionary = new Map();
+
+  let html = "";
+  try {
+    const response = await fetch(SOURCE_URL);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    html = await response.text();
+  } catch (err) {
+    console.warn(
+      `Warning: could not fetch source (${err.message}). Using local data only.`
+    );
   }
 
-  const html = await response.text();
-  const segment = extractRelevantSegment(html);
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+  const rootDir = path.resolve(scriptDir, "..");
 
-  const inlineDictionary = new Map();
-  const tableDictionary = new Map();
+  if (html) {
+    const segment = extractRelevantSegment(html);
 
-  parseInlineCodes(segment, inlineDictionary);
-  parseTableCodes(segment, tableDictionary);
+    const inlineDictionary = new Map();
+    const tableDictionary = new Map();
 
-  const dictionary = new Map(inlineDictionary);
-  for (const [code, description] of tableDictionary.entries()) {
+    parseInlineCodes(segment, inlineDictionary);
+    parseTableCodes(segment, tableDictionary);
+
+    for (const [code, description] of inlineDictionary) {
+      dictionary.set(code, description);
+    }
+    for (const [code, description] of tableDictionary) {
+      dictionary.set(code, description);
+    }
+  } else {
+    const existing = await loadJsonFile(
+      path.resolve(rootDir, OUTPUT_RELATIVE_PATH)
+    );
+    for (const [code, description] of Object.entries(existing)) {
+      dictionary.set(code, description);
+    }
+  }
+
+  const supplement = await loadJsonFile(
+    path.resolve(rootDir, "src/data/codes.supplement.json")
+  );
+  for (const [code, description] of Object.entries(supplement)) {
+    if (!dictionary.has(code)) {
+      dictionary.set(code, description);
+    }
+  }
+
+  const overrides = await loadJsonFile(
+    path.resolve(rootDir, "src/data/codes.overrides.json")
+  );
+  for (const [code, description] of Object.entries(overrides)) {
     dictionary.set(code, description);
   }
 
@@ -249,9 +297,6 @@ async function buildDictionary() {
   );
 
   const outputObject = Object.fromEntries(sortedEntries);
-
-  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-  const rootDir = path.resolve(scriptDir, "..");
   const outputPath = path.resolve(rootDir, OUTPUT_RELATIVE_PATH);
 
   await mkdir(path.dirname(outputPath), { recursive: true });

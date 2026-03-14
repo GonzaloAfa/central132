@@ -1,0 +1,20 @@
+{
+  "0-12": "Diríjase sin alarmas.",
+  "0-13": "Transmita por el equipo radial de la pieza de material mayor.",
+  "1-13": "La persona que solicitó bomberos, acérquese a la máquina.",
+  "1-14": "Tiempo estimado de llegada de la entidad que se indica.",
+  "4-0": "Indique código de ubicación geográfica.",
+  "4-1": "Repita dirección.",
+  "4-2": "Dirección exacta.",
+  "4-3": "Indique coordenadas según calles o avenidas principales.",
+  "4-4": "Guíeme.",
+  "5-9": "Frecuencia de comunicación transportes.",
+  "5-10": "Frecuencia de comandantes.",
+  "6-17": "Material mayor en jurisdicción del Cuerpo.",
+  "6-18": "Alarma de vecindario.",
+  "7-8": "Detenga el trabajo y proceda a evacuar la estructura siniestrada de inmediato.",
+  "7-9": "Proceda a evacuar a los moradores del inmueble.",
+  "7-10": "No se permite el trabajo de Bomberos en el lugar.",
+  "10-17": "Emergencia en Metro de Santiago.",
+  "12-10": "Solicita conductor para la unidad que se indica."
+}

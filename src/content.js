@@ -12,7 +12,12 @@ const TOP_LEVEL_LABELS = {
   "10-8": "Otros servicios de emergencia",
   "10-9": "Inspección y revisión",
   "10-10": "Rebrote de fuego",
-  "10-11": "Apoyo a otros cuerpos"
+  "10-11": "Apoyo a otros cuerpos",
+  "4-0": "Ubicación geográfica",
+  "4-1": "Ubicación geográfica",
+  "4-2": "Ubicación geográfica",
+  "4-3": "Ubicación geográfica",
+  "4-4": "Ubicación geográfica"
 };
 const HUMAN_DETAIL_OVERRIDES = {
   "10-0": "Incendio en una estructura (casa, edificio o similar).",
@@ -41,7 +46,14 @@ const HUMAN_DETAIL_OVERRIDES = {
   "10-8-24": "Rescate de animal.",
   "10-9": "Inspección o revisión de seguridad realizada por Bomberos.",
   "10-10": "Rebrote de fuego después de una emergencia previa.",
-  "10-11": "Apoyo operativo a otro Cuerpo de Bomberos."
+  "10-11": "Apoyo operativo a otro Cuerpo de Bomberos.",
+  "4-0": "Solicitud de ubicación geográfica.",
+  "7-8": "Orden de evacuar la estructura de inmediato.",
+  "7-9": "Orden de evacuar a los residentes del inmueble.",
+  "7-10": "Bomberos no puede trabajar en el lugar.",
+  "10-17": "Emergencia en estación de Metro de Santiago.",
+  "12-9": "Citación a la Compañía que se indica.",
+  "12-10": "Se solicita conductor para una unidad."
 };
 
 let dictionaryPromise = loadDictionary();
