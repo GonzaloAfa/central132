@@ -37,3 +37,56 @@
   line-height: 1.2;
   color: #4b5563;
 }
+
+.c132-units-info {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-top: 1px solid #d8d8d8;
+  border-left: 3px solid #c2521f;
+  background: #fef7f4;
+  border-radius: 4px;
+}
+
+.c132-units-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.c132-units-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.c132-units-info-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #c2521f;
+  white-space: nowrap;
+}
+
+.c132-units-info-toggle:hover {
+  text-decoration: underline;
+}
+
+.c132-units-info-details {
+  display: none;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #ebd5cc;
+}
+
+.c132-units-info-details--open {
+  display: block;
+}
+
+.c132-units-info-item {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #1f2937;
+  padding: 2px 0;
+}

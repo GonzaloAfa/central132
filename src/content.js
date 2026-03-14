@@ -1,5 +1,9 @@
 const DICTIONARY_PATH = "src/data/codes.full.json";
+const COMPANIES_PATH = "src/data/companies.json";
+const UNIT_TYPES_PATH = "src/data/unit-types.json";
 const TRANSLATION_CLASS = "c132-code-translation";
+const UNITS_CLASS = "c132-units-info";
+const UNIT_PATTERN = /\b(BT|RH|[BZQRSKMH])(\d{1,3})\b/g;
 const TOP_LEVEL_LABELS = {
   "10-0": "Incendio estructural",
   "10-1": "Incendio en vehículo o transporte",
@@ -56,19 +60,21 @@ const HUMAN_DETAIL_OVERRIDES = {
   "12-10": "Se solicita conductor para una unidad."
 };
 
-let dictionaryPromise = loadDictionary();
+let dictionaryPromise = loadJsonData(DICTIONARY_PATH, "dictionary");
+let companiesPromise = loadJsonData(COMPANIES_PATH, "companies");
+let unitTypesPromise = loadJsonData(UNIT_TYPES_PATH, "unit types");
 
-async function loadDictionary() {
+async function loadJsonData(relativePath, label) {
   try {
-    const response = await fetch(chrome.runtime.getURL(DICTIONARY_PATH));
+    const response = await fetch(chrome.runtime.getURL(relativePath));
     if (!response.ok) {
-      throw new Error(`Failed to load dictionary: ${response.status}`);
+      throw new Error(`Failed to load ${label}: ${response.status}`);
     }
 
     const data = await response.json();
     return data && typeof data === "object" ? data : {};
   } catch (error) {
-    console.error("[Central132] Could not load dictionary", error);
+    console.error(`[Central132] Could not load ${label}`, error);
     return {};
   }
 }
@@ -248,21 +254,150 @@ function injectTranslation(popoverEl, summary) {
   popoverEl.dataset.codeTranslated = "1";
 }
 
+function extractUnits(text) {
+  if (typeof text !== "string") {
+    return [];
+  }
+
+  const seen = new Set();
+  const units = [];
+
+  for (const match of text.matchAll(UNIT_PATTERN)) {
+    const raw = match[0];
+    if (seen.has(raw)) {
+      continue;
+    }
+    seen.add(raw);
+    units.push({ prefix: match[1], number: match[2], raw });
+  }
+
+  return units;
+}
+
+function resolveUnits(units, companies, unitTypes) {
+  return units.map((unit) => {
+    const typeName = unitTypes[unit.prefix] || unit.prefix;
+    const matches = [];
+
+    for (const [cuerpoId, cuerpo] of Object.entries(companies)) {
+      const company = cuerpo.companies && cuerpo.companies[unit.number];
+      if (company) {
+        matches.push({
+          cuerpo: cuerpoId,
+          cuerpoName: cuerpo.name,
+          company
+        });
+      }
+    }
+
+    return { ...unit, typeName, matches };
+  });
+}
+
+function formatOrdinal(number) {
+  return `${number}ª Cía.`;
+}
+
+function buildUnitSummaryText(unit) {
+  let text = unit.typeName;
+  if (unit.matches.length === 1) {
+    const m = unit.matches[0];
+    text += ` · ${formatOrdinal(unit.number)} "${m.company.name}" (${m.cuerpo})`;
+    if (m.company.communes && m.company.communes.length > 0) {
+      text += ` · ${m.company.communes.join(", ")}`;
+    }
+    if (m.company.specialty) {
+      text += ` · ${m.company.specialty}`;
+    }
+  } else if (unit.matches.length > 1) {
+    text += ` · ${formatOrdinal(unit.number)} — Posibles: ${unit.matches.map((m) => m.cuerpo).join(", ")}`;
+  }
+  return text;
+}
+
+function buildUnitsBlock(popoverEl, resolved) {
+  const contentEl = popoverEl.querySelector(".popover-content");
+  if (!contentEl) {
+    return;
+  }
+
+  const existing = contentEl.querySelector(`.${UNITS_CLASS}`);
+  if (existing) {
+    existing.remove();
+  }
+
+  const block = document.createElement("div");
+  block.className = UNITS_CLASS;
+
+  const header = document.createElement("div");
+  header.className = `${UNITS_CLASS}-header`;
+
+  const codes = resolved.map((u) => u.raw).join(", ");
+  const label = document.createElement("span");
+  label.className = `${UNITS_CLASS}-label`;
+  label.textContent = `Unidades: ${codes}`;
+
+  const toggle = document.createElement("button");
+  toggle.className = `${UNITS_CLASS}-toggle`;
+  toggle.textContent = "Ver detalle ▸";
+  toggle.type = "button";
+
+  header.appendChild(label);
+  header.appendChild(toggle);
+  block.appendChild(header);
+
+  const details = document.createElement("div");
+  details.className = `${UNITS_CLASS}-details`;
+
+  for (const unit of resolved) {
+    const item = document.createElement("div");
+    item.className = `${UNITS_CLASS}-item`;
+
+    const unitLabel = document.createElement("strong");
+    unitLabel.textContent = unit.raw;
+    item.appendChild(unitLabel);
+    item.appendChild(document.createTextNode(` — ${buildUnitSummaryText(unit)}`));
+    details.appendChild(item);
+  }
+
+  block.appendChild(details);
+
+  toggle.addEventListener("click", () => {
+    const expanded = details.classList.toggle(`${UNITS_CLASS}-details--open`);
+    toggle.textContent = expanded ? "Ocultar ▾" : "Ver detalle ▸";
+  });
+
+  contentEl.appendChild(block);
+}
+
 async function decoratePopover(popoverEl) {
   const titleEl = popoverEl.querySelector(".popover-title");
   if (!titleEl) {
     return;
   }
 
-  const code = extractCodeFromTitle(titleEl.textContent || "");
-  if (!code) {
-    return;
+  const titleText = titleEl.textContent || "";
+  const code = extractCodeFromTitle(titleText);
+
+  if (code) {
+    const dict = await dictionaryPromise;
+    const result = resolveText(code, dict);
+    const summary = buildQuickSummary(code, result, dict);
+    injectTranslation(popoverEl, summary);
   }
 
-  const dict = await dictionaryPromise;
-  const result = resolveText(code, dict);
-  const summary = buildQuickSummary(code, result, dict);
-  injectTranslation(popoverEl, summary);
+  const contentEl = popoverEl.querySelector(".popover-content");
+  const fullText = `${titleText} ${contentEl ? contentEl.textContent || "" : ""}`;
+  const units = extractUnits(fullText);
+
+  if (units.length > 0) {
+    const [companies, unitTypes] = await Promise.all([
+      companiesPromise,
+      unitTypesPromise
+    ]);
+    const resolved = resolveUnits(units, companies, unitTypes);
+    buildUnitsBlock(popoverEl, resolved);
+  }
 }
 
 const queued = new WeakSet();

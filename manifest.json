@@ -28,7 +28,11 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/data/codes.full.json"],
+      "resources": [
+        "src/data/codes.full.json",
+        "src/data/companies.json",
+        "src/data/unit-types.json"
+      ],
       "matches": ["https://central132.cl/*"]
     }
   ]
