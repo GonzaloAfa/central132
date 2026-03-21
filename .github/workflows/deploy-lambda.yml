@@ -31,15 +31,14 @@ jobs:
         run: cd dist && zip ../lambda.zip handler.js
 
       - name: Run database migrations
-        run: |
-          # Resolve IPv4 address to avoid GitHub runner IPv6 issues
-          IPV4=$(dig +short A ${{ secrets.SUPABASE_HOST }} | head -1)
-          PGPASSWORD=${{ secrets.SUPABASE_PASSWORD }} psql \
-            -h "$IPV4" \
-            -p ${{ secrets.SUPABASE_PORT }} \
-            -U ${{ secrets.SUPABASE_USER }} \
-            -d ${{ secrets.SUPABASE_DB }} \
-            -f sql/schema.sql
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
+          PGHOST: ${{ secrets.SUPABASE_HOST }}
+          PGPORT: ${{ secrets.SUPABASE_PORT }}
+          PGUSER: ${{ secrets.SUPABASE_USER }}
+          PGDATABASE: ${{ secrets.SUPABASE_DB }}
+          PGSSLMODE: require
+        run: psql -4 -f sql/schema.sql
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
