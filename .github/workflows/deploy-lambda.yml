@@ -48,9 +48,8 @@ jobs:
               --function-name $FUNCTION_NAME \
               --zip-file fileb://lambda.zip
 
-            aws lambda wait function-updated --function-name $FUNCTION_NAME
+            sleep 5
 
-            echo "Updating function configuration..."
             aws lambda update-function-configuration \
               --function-name $FUNCTION_NAME \
               --environment "Variables={MONGODB_URI=${{ secrets.MONGODB_URI }}}"
@@ -66,7 +65,7 @@ jobs:
               --memory-size 128 \
               --environment "Variables={MONGODB_URI=${{ secrets.MONGODB_URI }}}"
 
-            aws lambda wait function-active --function-name $FUNCTION_NAME
+            sleep 10
 
             echo "Creating EventBridge rule..."
             aws events put-rule \
