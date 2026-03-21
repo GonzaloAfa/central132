@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild src/handler.ts --bundle --platform=node --target=node20 --outfile=dist/handler.js",
+    "build": "esbuild src/handler.ts src/api.ts --bundle --platform=node --target=node20 --outdir=dist",
     "local": "npx tsx src/handler.ts"
   },
   "keywords": [],

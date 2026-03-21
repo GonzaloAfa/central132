@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Central132 - Mapa de Emergencias</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="controls">
+    <h1>Central132</h1>
+    <div class="filter-group">
+      <label for="from">Desde</label>
+      <input type="date" id="from" />
+    </div>
+    <div class="filter-group">
+      <label for="to">Hasta</label>
+      <input type="date" id="to" />
+    </div>
+    <div class="filter-group">
+      <label for="comuna">Comuna</label>
+      <select id="comuna">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="clave">Tipo emergencia</label>
+      <select id="clave">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <button id="search">Buscar</button>
+    <div id="status"></div>
+  </div>
+  <div id="map"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

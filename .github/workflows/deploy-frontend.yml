@@ -1,0 +1,145 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - frontend/**
+      - .github/workflows/deploy-frontend.yml
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Get API URL
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          pip install awscli --quiet
+          API_URL=$(aws lambda get-function-url-config --function-name central132-api --query 'FunctionUrl' --output text 2>/dev/null || echo "")
+          # Remove trailing slash
+          API_URL=${API_URL%/}
+          echo "VITE_API_URL=$API_URL" >> $GITHUB_ENV
+          echo "API URL: $API_URL"
+
+      - name: Build
+        run: VITE_API_URL=${{ env.VITE_API_URL }} npx vite build
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          BUCKET="central132-frontend"
+
+          # Create bucket if not exists
+          if ! aws s3 ls "s3://$BUCKET" 2>/dev/null; then
+            aws s3 mb "s3://$BUCKET" --region ${{ secrets.AWS_REGION }}
+          fi
+
+          aws s3 sync dist/ "s3://$BUCKET" --delete \
+            --cache-control "public, max-age=31536000, immutable"
+
+          # index.html should not be cached long
+          aws s3 cp dist/index.html "s3://$BUCKET/index.html" \
+            --cache-control "no-cache"
+
+      - name: Setup CloudFront
+        run: |
+          BUCKET="central132-frontend"
+
+          # Check if distribution exists
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='central132-frontend'].Id" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -z "$DIST_ID" ] || [ "$DIST_ID" = "None" ]; then
+            echo "Creating CloudFront distribution..."
+
+            # Create OAC
+            OAC_ID=$(aws cloudfront create-origin-access-control \
+              --origin-access-control-config '{
+                "Name": "central132-oac",
+                "SigningProtocol": "sigv4",
+                "SigningBehavior": "always",
+                "OriginAccessControlOriginType": "s3",
+                "Description": "OAC for central132 frontend"
+              }' --query 'OriginAccessControl.Id' --output text)
+
+            # Create distribution
+            DIST_ID=$(aws cloudfront create-distribution \
+              --distribution-config "{
+                \"CallerReference\": \"central132-$(date +%s)\",
+                \"Comment\": \"central132-frontend\",
+                \"DefaultCacheBehavior\": {
+                  \"TargetOriginId\": \"s3-$BUCKET\",
+                  \"ViewerProtocolPolicy\": \"redirect-to-https\",
+                  \"CachePolicyId\": \"658327ea-f89d-4fab-a63d-7e88639e58f6\",
+                  \"Compress\": true
+                },
+                \"Origins\": {
+                  \"Quantity\": 1,
+                  \"Items\": [{
+                    \"Id\": \"s3-$BUCKET\",
+                    \"DomainName\": \"$BUCKET.s3.${{ secrets.AWS_REGION }}.amazonaws.com\",
+                    \"S3OriginConfig\": { \"OriginAccessIdentity\": \"\" },
+                    \"OriginAccessControlId\": \"$OAC_ID\"
+                  }]
+                },
+                \"DefaultRootObject\": \"index.html\",
+                \"CustomErrorResponses\": {
+                  \"Quantity\": 1,
+                  \"Items\": [{
+                    \"ErrorCode\": 404,
+                    \"ResponseCode\": 200,
+                    \"ResponsePagePath\": \"/index.html\",
+                    \"ErrorCachingMinTTL\": 10
+                  }]
+                },
+                \"Enabled\": true
+              }" --query 'Distribution.Id' --output text)
+
+            echo "Distribution created: $DIST_ID"
+
+            # Add S3 bucket policy for CloudFront
+            DIST_ARN=$(aws cloudfront get-distribution --id $DIST_ID --query 'Distribution.ARN' --output text)
+            aws s3api put-bucket-policy --bucket $BUCKET --policy "{
+              \"Version\": \"2012-10-17\",
+              \"Statement\": [{
+                \"Sid\": \"AllowCloudFront\",
+                \"Effect\": \"Allow\",
+                \"Principal\": { \"Service\": \"cloudfront.amazonaws.com\" },
+                \"Action\": \"s3:GetObject\",
+                \"Resource\": \"arn:aws:s3:::$BUCKET/*\",
+                \"Condition\": { \"StringEquals\": { \"AWS:SourceArn\": \"$DIST_ARN\" } }
+              }]
+            }"
+          else
+            echo "Invalidating CloudFront cache..."
+            aws cloudfront create-invalidation \
+              --distribution-id "$DIST_ID" \
+              --paths "/index.html"
+          fi
+
+          # Get domain
+          DOMAIN=$(aws cloudfront get-distribution --id "$DIST_ID" --query 'Distribution.DomainName' --output text)
+          echo "Frontend URL: https://$DOMAIN"
