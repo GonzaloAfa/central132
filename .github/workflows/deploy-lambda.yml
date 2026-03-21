@@ -59,20 +59,23 @@ jobs:
               --memory-size 128 \
               --environment "Variables={MONGODB_URI=${{ secrets.MONGODB_URI }}}"
             sleep 10
-            aws events put-rule \
-              --name central132-collector-schedule \
-              --schedule-expression "rate(15 minutes)"
-            LAMBDA_ARN=$(aws lambda get-function --function-name $FUNCTION_NAME --query 'Configuration.FunctionArn' --output text)
-            aws lambda add-permission \
-              --function-name $FUNCTION_NAME \
-              --statement-id eventbridge-invoke \
-              --action lambda:InvokeFunction \
-              --principal events.amazonaws.com \
-              --source-arn arn:aws:events:${{ secrets.AWS_REGION }}:287698983131:rule/central132-collector-schedule
-            aws events put-targets \
-              --rule central132-collector-schedule \
-              --targets "Id=central132-collector,Arn=$LAMBDA_ARN"
           fi
+
+          # Always ensure EventBridge schedule exists
+          aws events put-rule \
+            --name central132-collector-schedule \
+            --schedule-expression "rate(15 minutes)"
+          LAMBDA_ARN=$(aws lambda get-function --function-name $FUNCTION_NAME --query 'Configuration.FunctionArn' --output text)
+          aws lambda add-permission \
+            --function-name $FUNCTION_NAME \
+            --statement-id eventbridge-invoke \
+            --action lambda:InvokeFunction \
+            --principal events.amazonaws.com \
+            --source-arn arn:aws:events:${{ secrets.AWS_REGION }}:287698983131:rule/central132-collector-schedule \
+            2>/dev/null || true
+          aws events put-targets \
+            --rule central132-collector-schedule \
+            --targets "Id=central132-collector,Arn=$LAMBDA_ARN"
 
       # --- API Lambda ---
       - name: Deploy API Lambda
