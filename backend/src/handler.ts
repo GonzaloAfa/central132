@@ -1,11 +1,11 @@
 /**
  * Central132 Incident Collector
- * Lambda function that polls the central132.cl API and stores incidents in Supabase.
+ * Lambda function that polls the central132.cl API and stores incidents in MongoDB.
  * Triggered by EventBridge every 15 minutes.
  */
 
 import type { ScheduledHandler } from "aws-lambda";
-import { Client } from "pg";
+import { MongoClient } from "mongodb";
 
 const API_URL = "https://central132.cl/llamados/ultimos";
 
@@ -35,46 +35,13 @@ interface FeatureCollection {
   features: Feature[];
 }
 
-interface IncidentRecord {
-  id: number;
-  fecha: string;
-  clave: string;
-  comuna: string;
-  ubicacion: string;
-  lng: number;
-  lat: number;
-  cuerpo: string;
-  carros: string;
-  raw_feature: string;
-}
+let cachedClient: MongoClient | null = null;
 
-const LOOKUP_SQL = "SELECT carros FROM incidents WHERE id = $1";
-
-const UPSERT_SQL = `
-INSERT INTO incidents (id, fecha, clave, comuna, ubicacion, location, cuerpo, carros, raw_feature)
-VALUES ($1, $2, $3, $4, $5,
-        ST_SetSRID(ST_MakePoint($6, $7), 4326)::geography,
-        $8, $9, $10)
-ON CONFLICT (id) DO UPDATE SET
-    carros       = EXCLUDED.carros,
-    raw_feature  = EXCLUDED.raw_feature,
-    last_seen_at = NOW()
-`;
-
-const CHANGE_SQL = `
-INSERT INTO incident_changes (incident_id, field, old_value, new_value)
-VALUES ($1, 'carros', $2, $3)
-`;
-
-function getClient(): Client {
-  return new Client({
-    host: process.env.SUPABASE_HOST,
-    port: parseInt(process.env.SUPABASE_PORT || "6543"),
-    database: process.env.SUPABASE_DB || "postgres",
-    user: process.env.SUPABASE_USER || "postgres",
-    password: process.env.SUPABASE_PASSWORD,
-    ssl: { rejectUnauthorized: false },
-  });
+async function getClient(): Promise<MongoClient> {
+  if (cachedClient) return cachedClient;
+  cachedClient = new MongoClient(process.env.MONGODB_URI!);
+  await cachedClient.connect();
+  return cachedClient;
 }
 
 async function fetchIncidents(): Promise<Feature[]> {
@@ -82,22 +49,6 @@ async function fetchIncidents(): Promise<Feature[]> {
   if (!resp.ok) throw new Error(`API responded ${resp.status}`);
   const data: FeatureCollection = await resp.json();
   return data.features ?? [];
-}
-
-function parseFeature(feature: Feature): IncidentRecord {
-  const { properties: p, geometry: g } = feature;
-  return {
-    id: p.id,
-    fecha: p.fecha,
-    clave: p.clave ?? "",
-    comuna: p.comuna ?? "",
-    ubicacion: p.ubicacion ?? "",
-    lng: g.coordinates[0],
-    lat: g.coordinates[1],
-    cuerpo: p.cuerpo ?? "",
-    carros: p.carros ?? "",
-    raw_feature: JSON.stringify(feature),
-  };
 }
 
 export const handler: ScheduledHandler = async () => {
@@ -108,39 +59,69 @@ export const handler: ScheduledHandler = async () => {
   }
 
   const stats = { new: 0, updated: 0, unchanged: 0, changes_logged: 0 };
-  const client = getClient();
+  const client = await getClient();
+  const db = client.db("central132");
+  const incidents = db.collection("incidents");
+  const changes = db.collection("incident_changes");
 
-  try {
-    await client.connect();
+  // Ensure geospatial index exists (idempotent)
+  await incidents.createIndex({ "location": "2dsphere" });
+  await incidents.createIndex({ "properties.id": 1 }, { unique: true });
+  await incidents.createIndex({ "properties.fecha": 1 });
+  await incidents.createIndex({ "properties.clave": 1 });
+  await incidents.createIndex({ "properties.comuna": 1 });
+  await incidents.createIndex({ "properties.carros": 1 });
 
-    for (const feature of features) {
-      const r = parseFeature(feature);
+  for (const feature of features) {
+    const incidentId = feature.properties.id;
 
-      // Check if incident already exists
-      const { rows } = await client.query(LOOKUP_SQL, [r.id]);
-      const existing = rows[0];
+    // Build document with GeoJSON location for geo queries
+    const doc = {
+      ...feature,
+      location: feature.geometry,
+      first_seen_at: new Date(),
+      last_seen_at: new Date(),
+    };
 
-      if (!existing) {
-        stats.new++;
+    const existing = await incidents.findOne({ "properties.id": incidentId });
+
+    if (!existing) {
+      await incidents.insertOne(doc);
+      stats.new++;
+    } else {
+      const oldCarros = existing.properties.carros;
+      const newCarros = feature.properties.carros;
+
+      if (oldCarros !== newCarros) {
+        // Log the change before updating
+        await changes.insertOne({
+          incident_id: incidentId,
+          field: "carros",
+          old_value: oldCarros,
+          new_value: newCarros,
+          changed_at: new Date(),
+        });
+        stats.changes_logged++;
+        stats.updated++;
       } else {
-        const oldCarros: string = existing.carros;
-        if (oldCarros === r.carros) {
-          stats.unchanged++;
-        } else {
-          stats.updated++;
-          await client.query(CHANGE_SQL, [r.id, oldCarros, r.carros]);
-          stats.changes_logged++;
-        }
+        stats.unchanged++;
       }
 
-      // Upsert always (updates last_seen_at even if unchanged)
-      await client.query(UPSERT_SQL, [
-        r.id, r.fecha, r.clave, r.comuna, r.ubicacion,
-        r.lng, r.lat, r.cuerpo, r.carros, r.raw_feature,
-      ]);
+      // Always update last_seen_at and raw data
+      await incidents.updateOne(
+        { "properties.id": incidentId },
+        {
+          $set: {
+            properties: feature.properties,
+            geometry: feature.geometry,
+            location: feature.geometry,
+            raw_feature: feature,
+            last_seen_at: new Date(),
+          },
+          $setOnInsert: { first_seen_at: new Date() },
+        }
+      );
     }
-  } finally {
-    await client.end();
   }
 
   console.log(
