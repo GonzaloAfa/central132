@@ -36,9 +36,10 @@ jobs:
           PGUSER: ${{ secrets.SUPABASE_USER }}
           PGDATABASE: ${{ secrets.SUPABASE_DB }}
           PGPORT: ${{ secrets.SUPABASE_PORT }}
+          PGHOST: ${{ secrets.SUPABASE_HOST }}
           PGSSLMODE: require
         run: |
-          IPV4=$(getent ahostsv4 "${{ secrets.SUPABASE_HOST }}" | head -1 | awk '{print $1}')
+          IPV4=$(getent ahostsv4 "$PGHOST" | head -1 | awk '{print $1}')
           psql -h "$IPV4" -f sql/schema.sql
 
       - uses: aws-actions/configure-aws-credentials@v4
