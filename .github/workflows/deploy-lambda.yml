@@ -104,7 +104,7 @@ jobs:
             aws lambda create-function-url-config \
               --function-name $FUNCTION_NAME \
               --auth-type NONE \
-              --cors '{"AllowOrigins":["*"],"AllowMethods":["GET","OPTIONS"],"AllowHeaders":["Content-Type"],"MaxAge":86400}'
+              --cors 'AllowOrigins=*,AllowMethods=GET,AllowMethods=OPTIONS,AllowHeaders=Content-Type,MaxAge=86400'
             aws lambda add-permission \
               --function-name $FUNCTION_NAME \
               --statement-id public-access \
