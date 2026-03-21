@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Central132 Clave Translator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agrega traducciones humanas de claves de emergencia en central132.cl.",
   "icons": {
     "16": "assets/icons/icon-16.png",

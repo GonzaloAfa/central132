@@ -1,0 +1,95 @@
+name: Deploy Lambda
+
+on:
+  push:
+    branches: [main]
+    paths: [backend/**]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Package Lambda
+        run: cd dist && zip ../lambda.zip handler.js
+
+      - name: Run database migrations
+        run: |
+          PGPASSWORD=${{ secrets.SUPABASE_PASSWORD }} psql \
+            -h ${{ secrets.SUPABASE_HOST }} \
+            -p ${{ secrets.SUPABASE_PORT }} \
+            -U ${{ secrets.SUPABASE_USER }} \
+            -d ${{ secrets.SUPABASE_DB }} \
+            -f sql/schema.sql
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create or update Lambda
+        run: |
+          FUNCTION_NAME="central132-collector"
+          ROLE_ARN="arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID || '287698983131' }}:role/central132-lambda-role"
+
+          # Check if function exists
+          if aws lambda get-function --function-name $FUNCTION_NAME 2>/dev/null; then
+            echo "Updating function code..."
+            aws lambda update-function-code \
+              --function-name $FUNCTION_NAME \
+              --zip-file fileb://lambda.zip
+
+            aws lambda wait function-updated --function-name $FUNCTION_NAME
+
+            echo "Updating function configuration..."
+            aws lambda update-function-configuration \
+              --function-name $FUNCTION_NAME \
+              --environment "Variables={SUPABASE_HOST=${{ secrets.SUPABASE_HOST }},SUPABASE_PORT=${{ secrets.SUPABASE_PORT }},SUPABASE_DB=${{ secrets.SUPABASE_DB }},SUPABASE_USER=${{ secrets.SUPABASE_USER }},SUPABASE_PASSWORD=${{ secrets.SUPABASE_PASSWORD }}}"
+          else
+            echo "Creating function..."
+            aws lambda create-function \
+              --function-name $FUNCTION_NAME \
+              --runtime nodejs20.x \
+              --handler handler.handler \
+              --role $ROLE_ARN \
+              --zip-file fileb://lambda.zip \
+              --timeout 30 \
+              --memory-size 128 \
+              --environment "Variables={SUPABASE_HOST=${{ secrets.SUPABASE_HOST }},SUPABASE_PORT=${{ secrets.SUPABASE_PORT }},SUPABASE_DB=${{ secrets.SUPABASE_DB }},SUPABASE_USER=${{ secrets.SUPABASE_USER }},SUPABASE_PASSWORD=${{ secrets.SUPABASE_PASSWORD }}}"
+
+            aws lambda wait function-active --function-name $FUNCTION_NAME
+
+            echo "Creating EventBridge rule..."
+            aws events put-rule \
+              --name central132-collector-schedule \
+              --schedule-expression "rate(15 minutes)"
+
+            LAMBDA_ARN=$(aws lambda get-function --function-name $FUNCTION_NAME --query 'Configuration.FunctionArn' --output text)
+
+            aws lambda add-permission \
+              --function-name $FUNCTION_NAME \
+              --statement-id eventbridge-invoke \
+              --action lambda:InvokeFunction \
+              --principal events.amazonaws.com \
+              --source-arn arn:aws:events:${{ secrets.AWS_REGION }}:287698983131:rule/central132-collector-schedule
+
+            aws events put-targets \
+              --rule central132-collector-schedule \
+              --targets "Id=central132-collector,Arn=$LAMBDA_ARN"
+          fi

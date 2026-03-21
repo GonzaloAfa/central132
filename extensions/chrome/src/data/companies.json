@@ -1,0 +1,140 @@
+{
+  "CBS": {
+    "name": "Cuerpo de Bomberos de Santiago",
+    "companies": {
+      "1":  { "name": "Deber y Constancia", "communes": ["Santiago Centro"], "specialty": "Rescate urbano" },
+      "2":  { "name": "Sur", "communes": ["Santiago Centro"] },
+      "3":  { "name": "La Heroica", "communes": ["Santiago Centro"] },
+      "4":  { "name": "Pompe France", "communes": ["Providencia"] },
+      "5":  { "name": "Bomba Arturo Prat", "communes": ["Santiago Centro"] },
+      "6":  { "name": "Salvadores y Guardia de Propiedad", "communes": ["Santiago Centro", "Estación Central"], "specialty": "Rescate vehicular y vertical" },
+      "7":  { "name": "Zapadores Franco-Chilena", "communes": ["Santiago Centro"] },
+      "8":  { "name": "Octava Compañía", "communes": ["Recoleta"] },
+      "9":  { "name": "Novena Compañía", "communes": ["Santiago Centro"] },
+      "10": { "name": "Bomba España", "communes": ["Santiago Centro"] },
+      "11": { "name": "Pompa Italia", "communes": ["Santiago Centro"] },
+      "12": { "name": "Chile Excelsior", "communes": ["Santiago Centro"] },
+      "13": { "name": "Decimotercera Compañía", "communes": ["Providencia"] },
+      "14": { "name": "J.A.S. Jackson", "communes": ["Santiago Centro"] },
+      "15": { "name": "Decimoquinta Compañía", "communes": ["Las Condes"] },
+      "16": { "name": "Bomba Chile", "communes": ["Estación Central"], "specialty": "Rescate vehicular, Unidad canina" },
+      "17": { "name": "Bomba Los Cerrillos", "communes": ["Santiago Centro"], "specialty": "HAZMAT" },
+      "18": { "name": "Bomba Vitacura", "communes": ["Vitacura"], "specialty": "HAZMAT" },
+      "19": { "name": "Decimonovena Compañía", "communes": ["Lo Barnechea"] },
+      "20": { "name": "Apoquindo", "communes": ["Las Condes"] },
+      "21": { "name": "Bomba Renca", "communes": ["Renca"], "specialty": "Incendios forestales" },
+      "22": { "name": "Lealtad y Sacrificio", "communes": ["Renca"] }
+    }
+  },
+  "CBÑ": {
+    "name": "Cuerpo de Bomberos de Ñuñoa",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["Ñuñoa"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["Ñuñoa"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["Macul"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["Peñalolén"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["Ñuñoa"] },
+      "6":  { "name": "Bomba La Reina", "communes": ["La Reina"] },
+      "7":  { "name": "Séptima Compañía", "communes": ["Peñalolén"] },
+      "8":  { "name": "Octava Compañía", "communes": ["La Florida"] },
+      "9":  { "name": "Novena Compañía", "communes": ["Macul"] },
+      "10": { "name": "Décima Compañía", "communes": ["La Florida"] },
+      "11": { "name": "Undécima Compañía", "communes": ["La Florida"] }
+    }
+  },
+  "CBMS": {
+    "name": "Cuerpo de Bomberos Metropolitano Sur",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["La Cisterna"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["San Miguel"] },
+      "5":  { "name": "Lealtad y Sacrificio", "communes": ["San Joaquín"] },
+      "6":  { "name": "Unión para Servir", "communes": ["Pedro Aguirre Cerda"] },
+      "7":  { "name": "Voluntad y Acción", "communes": ["Pedro Aguirre Cerda"] },
+      "8":  { "name": "Patria y Progreso", "communes": ["Lo Espejo"] },
+      "9":  { "name": "Protección y Lealtad", "communes": ["Lo Espejo"] },
+      "10": { "name": "Disciplina y Abnegación", "communes": ["San Joaquín"] },
+      "11": { "name": "Lealtad y Comunidad", "communes": ["El Bosque"] }
+    }
+  },
+  "CBPA": {
+    "name": "Cuerpo de Bomberos de Puente Alto",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["Puente Alto"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["Puente Alto"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["Puente Alto"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["Puente Alto"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["Puente Alto"] },
+      "6":  { "name": "Sexta Compañía", "communes": ["Puente Alto"] },
+      "7":  { "name": "Séptima Compañía", "communes": ["Puente Alto"] },
+      "8":  { "name": "Octava Compañía", "communes": ["Pirque"] },
+      "9":  { "name": "Novena Compañía", "communes": ["Puente Alto"] },
+      "10": { "name": "Bomba Suiza", "communes": ["Puente Alto"] }
+    }
+  },
+  "CBM": {
+    "name": "Cuerpo de Bomberos de Maipú",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["Maipú"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["Maipú"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["Maipú"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["Maipú"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["Maipú"] },
+      "6":  { "name": "Sexta Compañía", "communes": ["Maipú"] },
+      "7":  { "name": "Séptima Compañía", "communes": ["Maipú"] },
+      "8":  { "name": "Octava Compañía", "communes": ["Maipú"] },
+      "9":  { "name": "Novena Compañía", "communes": ["Cerrillos"] }
+    }
+  },
+  "CBQN": {
+    "name": "Cuerpo de Bomberos de Quinta Normal",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["Quinta Normal"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["Quinta Normal"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["Cerro Navia"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["Lo Prado"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["Pudahuel"] },
+      "6":  { "name": "Sexta Compañía", "communes": ["Cerro Navia"] },
+      "7":  { "name": "Bomba Capitán Ignacio Carrera Pinto", "communes": ["Pudahuel"] },
+      "8":  { "name": "Octava Compañía", "communes": ["Lo Prado"] },
+      "9":  { "name": "Novena Compañía", "communes": ["Pudahuel"] },
+      "10": { "name": "Décima Compañía", "communes": ["Quinta Normal"] },
+      "11": { "name": "Undécima Compañía", "communes": ["Pudahuel"] }
+    }
+  },
+  "CBSB": {
+    "name": "Cuerpo de Bomberos de San Bernardo",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["San Bernardo"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["San Bernardo"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["San Bernardo"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["San Bernardo"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["San Bernardo"] },
+      "6":  { "name": "Sexta Compañía", "communes": ["Calera de Tango"] },
+      "7":  { "name": "Séptima Compañía", "communes": ["San Bernardo"] },
+      "8":  { "name": "Octava Compañía", "communes": ["San Bernardo"] }
+    }
+  },
+  "CBCH": {
+    "name": "Cuerpo de Bomberos Conchalí-Huechuraba",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["Conchalí"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["Conchalí"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["Huechuraba"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["Conchalí"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["Huechuraba"] },
+      "6":  { "name": "Sexta Compañía", "communes": ["Conchalí"] },
+      "7":  { "name": "Séptima Compañía", "communes": ["Conchalí"] },
+      "8":  { "name": "Octava Compañía", "communes": ["Huechuraba"] }
+    }
+  },
+  "CBGP": {
+    "name": "Cuerpo de Bomberos de La Granja, San Ramón y La Pintana",
+    "companies": {
+      "1":  { "name": "Primera Compañía", "communes": ["La Granja"] },
+      "2":  { "name": "Segunda Compañía", "communes": ["San Ramón"] },
+      "3":  { "name": "Tercera Compañía", "communes": ["La Pintana"] },
+      "4":  { "name": "Cuarta Compañía", "communes": ["La Pintana"] },
+      "5":  { "name": "Quinta Compañía", "communes": ["La Granja"] }
+    }
+  }
+}

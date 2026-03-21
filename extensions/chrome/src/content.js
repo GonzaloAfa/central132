@@ -3,7 +3,8 @@ const COMPANIES_PATH = "src/data/companies.json";
 const UNIT_TYPES_PATH = "src/data/unit-types.json";
 const TRANSLATION_CLASS = "c132-code-translation";
 const UNITS_CLASS = "c132-units-info";
-const UNIT_PATTERN = /\b(BT|RH|[BZQRSKMH])(\d{1,3})\b/g;
+const SUMMARY_CLASS = "c132-popover-summary";
+const UNIT_PATTERN = /\b([A-Z]{1,3})(?:\s*-\s*)?(\d{1,3})\b/gi;
 const TOP_LEVEL_LABELS = {
   "10-0": "Incendio estructural",
   "10-1": "Incendio en vehículo o transporte",
@@ -181,7 +182,7 @@ function buildQuickSummary(originalCode, result, dict) {
     return {
       title: "Código no catalogado",
       detail: null,
-      meta: `Código ${originalCode}`
+      meta: null
     };
   }
 
@@ -203,11 +204,11 @@ function buildQuickSummary(originalCode, result, dict) {
     detail = `${detail.slice(0, 89).trimEnd()}...`;
   }
 
-  let meta = `Código ${originalCode}`;
+  let meta = null;
   if (result.matchedCode !== originalCode) {
-    meta = `${meta} · basado en ${result.matchedCode}`;
+    meta = `Basado en ${result.matchedCode}`;
   } else if (humanDetail && humanDetail.sourceCode !== originalCode) {
-    meta = `${meta} · interpretación basada en ${humanDetail.sourceCode}`;
+    meta = `Interpretación basada en ${humanDetail.sourceCode}`;
   }
 
   return { title, detail, meta };
@@ -245,16 +246,35 @@ function injectTranslation(popoverEl, summary) {
     block.appendChild(detail);
   }
 
-  const meta = document.createElement("div");
-  meta.className = `${TRANSLATION_CLASS}-meta`;
-  meta.textContent = summary.meta;
-  block.appendChild(meta);
+  if (summary.meta) {
+    const meta = document.createElement("div");
+    meta.className = `${TRANSLATION_CLASS}-meta`;
+    meta.textContent = summary.meta;
+    block.appendChild(meta);
+  }
 
   contentEl.appendChild(block);
   popoverEl.dataset.codeTranslated = "1";
 }
 
-function extractUnits(text) {
+function normalizeUnitPrefix(prefix, unitTypes) {
+  const normalized = (prefix || "").toUpperCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (unitTypes[normalized]) {
+    return normalized;
+  }
+
+  const fallback = Object.keys(unitTypes)
+    .sort((a, b) => b.length - a.length)
+    .find((candidate) => normalized.startsWith(candidate));
+
+  return fallback || null;
+}
+
+function extractUnits(text, unitTypes) {
   if (typeof text !== "string") {
     return [];
   }
@@ -263,12 +283,20 @@ function extractUnits(text) {
   const units = [];
 
   for (const match of text.matchAll(UNIT_PATTERN)) {
-    const raw = match[0];
-    if (seen.has(raw)) {
+    const rawPrefix = (match[1] || "").toUpperCase();
+    const number = match[2];
+    const prefix = normalizeUnitPrefix(rawPrefix, unitTypes);
+    if (!prefix) {
       continue;
     }
-    seen.add(raw);
-    units.push({ prefix: match[1], number: match[2], raw });
+
+    const raw = match[0].toUpperCase().replace(/\s+/g, "");
+    const key = `${prefix}-${number}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    units.push({ prefix, number, raw });
   }
 
   return units;
@@ -309,10 +337,232 @@ function buildUnitSummaryText(unit) {
     if (m.company.specialty) {
       text += ` · ${m.company.specialty}`;
     }
-  } else if (unit.matches.length > 1) {
-    text += ` · ${formatOrdinal(unit.number)} — Posibles: ${unit.matches.map((m) => m.cuerpo).join(", ")}`;
   }
   return text;
+}
+
+function extractBaseContentLines(contentEl) {
+  if (!(contentEl instanceof HTMLElement)) {
+    return [];
+  }
+
+  const lines = [];
+  let currentLine = "";
+
+  for (const node of contentEl.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      currentLine += node.textContent || "";
+      continue;
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (node.tagName === "BR") {
+      if (currentLine.trim()) {
+        lines.push(currentLine.trim());
+      }
+      currentLine = "";
+      continue;
+    }
+
+    if (
+      node.classList.contains(SUMMARY_CLASS) ||
+      node.classList.contains(TRANSLATION_CLASS) ||
+      node.classList.contains(UNITS_CLASS)
+    ) {
+      continue;
+    }
+
+    currentLine += node.textContent || "";
+  }
+
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
+  }
+
+  return lines;
+}
+
+function getBaseContentLines(contentEl) {
+  if (!(contentEl instanceof HTMLElement)) {
+    return [];
+  }
+
+  const cached = contentEl.dataset.c132BaseLines;
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      console.warn("[Central132] Could not parse cached popup lines", error);
+    }
+  }
+
+  const lines = extractBaseContentLines(contentEl);
+  contentEl.dataset.c132BaseLines = JSON.stringify(lines);
+  return lines;
+}
+
+function getSummaryIcon(kind) {
+  if (kind === "time") {
+    return [
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">',
+      '<path d="M8 3h8v2h-1v3.3l-1.7 1.7L15 11.7V19h1v2H8v-2h1v-7.3l1.7-1.7L9 8.3V5H8V3Zm3 2v4.1l-2 2V19h6v-7.9l-2-2V5h-2Z" fill="currentColor"/>',
+      "</svg>"
+    ].join("");
+  }
+
+  return [
+    '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">',
+    '<path d="M12 2a7 7 0 0 1 7 7c0 4.9-5.1 10.8-6.1 11.9a1.2 1.2 0 0 1-1.8 0C10.1 19.8 5 13.9 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6a2.5 2.5 0 0 0 0 5.5Z" fill="currentColor"/>',
+    "</svg>"
+  ].join("");
+}
+
+function buildSummaryRow(kind, text) {
+  if (!text) {
+    return null;
+  }
+
+  const row = document.createElement("div");
+  row.className = `${SUMMARY_CLASS}-row ${SUMMARY_CLASS}-row--${kind}`;
+
+  const icon = document.createElement("span");
+  icon.className = `${SUMMARY_CLASS}-icon ${SUMMARY_CLASS}-icon--${kind}`;
+  icon.innerHTML = getSummaryIcon(kind);
+
+  const copy = document.createElement("div");
+  copy.className = `${SUMMARY_CLASS}-text`;
+  copy.textContent = text;
+
+  row.appendChild(icon);
+  row.appendChild(copy);
+
+  return row;
+}
+
+function buildSummaryBlock(lines, unitsLine) {
+  if (!Array.isArray(lines) || lines.length === 0) {
+    return null;
+  }
+
+  const timeLine = lines[0] || "";
+  const locationLine = lines.slice(1).filter((line) => line !== unitsLine).join(" · ");
+
+  const block = document.createElement("div");
+  block.className = SUMMARY_CLASS;
+  guardPopoverInteractions(block);
+
+  const timeRow = buildSummaryRow("time", timeLine);
+  if (timeRow) {
+    block.appendChild(timeRow);
+  }
+
+  const locationRow = buildSummaryRow("location", locationLine);
+  if (locationRow) {
+    block.appendChild(locationRow);
+  }
+
+  return block.childNodes.length > 0 ? block : null;
+}
+
+function decorateBaseContent(contentEl, lines, unitsLine) {
+  if (!(contentEl instanceof HTMLElement)) {
+    return;
+  }
+
+  for (const node of Array.from(contentEl.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      node.remove();
+      continue;
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (
+      node.classList.contains(TRANSLATION_CLASS) ||
+      node.classList.contains(UNITS_CLASS)
+    ) {
+      continue;
+    }
+
+    node.remove();
+  }
+
+  const summary = buildSummaryBlock(lines, unitsLine);
+  if (summary) {
+    contentEl.prepend(summary);
+  }
+}
+
+function findUnitsLine(lines, unitTypes) {
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    if (extractUnits(lines[index], unitTypes).length > 0) {
+      return lines[index];
+    }
+  }
+
+  return "";
+}
+
+function guardPopoverInteractions(element) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  const stop = (event) => {
+    event.stopPropagation();
+  };
+
+  [
+    "click",
+    "dblclick",
+    "mousedown",
+    "mouseup",
+    "pointerdown",
+    "pointerup",
+    "touchstart",
+    "touchend"
+  ].forEach((eventName) => {
+    element.addEventListener(eventName, stop);
+  });
+}
+
+function bindSafeToggle(toggle, details) {
+  if (!(toggle instanceof HTMLElement) || !(details instanceof HTMLElement)) {
+    return;
+  }
+
+  const consume = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === "function") {
+      event.stopImmediatePropagation();
+    }
+  };
+
+  [
+    "mousedown",
+    "mouseup",
+    "pointerdown",
+    "pointerup",
+    "touchstart",
+    "touchend"
+  ].forEach((eventName) => {
+    toggle.addEventListener(eventName, consume, true);
+  });
+
+  toggle.addEventListener("click", (event) => {
+    consume(event);
+    const expanded = details.classList.toggle(`${UNITS_CLASS}-details--open`);
+    toggle.textContent = expanded ? "Ocultar ▾" : "Ver detalle ▸";
+  }, true);
 }
 
 function buildUnitsBlock(popoverEl, resolved) {
@@ -328,6 +578,7 @@ function buildUnitsBlock(popoverEl, resolved) {
 
   const block = document.createElement("div");
   block.className = UNITS_CLASS;
+  guardPopoverInteractions(block);
 
   const header = document.createElement("div");
   header.className = `${UNITS_CLASS}-header`;
@@ -361,11 +612,7 @@ function buildUnitsBlock(popoverEl, resolved) {
   }
 
   block.appendChild(details);
-
-  toggle.addEventListener("click", () => {
-    const expanded = details.classList.toggle(`${UNITS_CLASS}-details--open`);
-    toggle.textContent = expanded ? "Ocultar ▾" : "Ver detalle ▸";
-  });
+  bindSafeToggle(toggle, details);
 
   contentEl.appendChild(block);
 }
@@ -378,6 +625,9 @@ async function decoratePopover(popoverEl) {
 
   const titleText = titleEl.textContent || "";
   const code = extractCodeFromTitle(titleText);
+  const contentEl = popoverEl.querySelector(".popover-content");
+  const contentLines = getBaseContentLines(contentEl);
+  let unitsLine = "";
 
   if (code) {
     const dict = await dictionaryPromise;
@@ -386,17 +636,23 @@ async function decoratePopover(popoverEl) {
     injectTranslation(popoverEl, summary);
   }
 
-  const contentEl = popoverEl.querySelector(".popover-content");
-  const fullText = `${titleText} ${contentEl ? contentEl.textContent || "" : ""}`;
-  const units = extractUnits(fullText);
+  if (contentLines.length > 0) {
+    const unitTypes = await unitTypesPromise;
+    unitsLine = findUnitsLine(contentLines, unitTypes);
+    decorateBaseContent(contentEl, contentLines, unitsLine);
+  }
 
-  if (units.length > 0) {
+  if (contentLines.length > 0) {
     const [companies, unitTypes] = await Promise.all([
       companiesPromise,
       unitTypesPromise
     ]);
-    const resolved = resolveUnits(units, companies, unitTypes);
-    buildUnitsBlock(popoverEl, resolved);
+    const units = extractUnits(unitsLine, unitTypes);
+
+    if (units.length > 0) {
+      const resolved = resolveUnits(units, companies, unitTypes);
+      buildUnitsBlock(popoverEl, resolved);
+    }
   }
 }
 

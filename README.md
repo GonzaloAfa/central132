@@ -1,56 +1,28 @@
-# Central132 Chrome Extension
+# Central132
 
-Extensión de Chrome (Manifest V3) para traducir claves radiales en los popups de `https://central132.cl/*`.
-
-## Que hace
-
-- Detecta el popup que aparece al hacer click en una emergencia.
-- Extrae la clave del titulo (ejemplo: `10-3-1 en Las Condes`).
-- Busca traduccion en diccionario local (`src/data/codes.full.json`).
-- Aplica microcopy ciudadano para que el tipo de emergencia se entienda rapido.
-- Agrega una linea extra:
-  - `En palabras simples` + tipo principal + detalle corto.
-  - o `Código no catalogado` cuando no hay mapeo.
-- Si no encuentra clave exacta, aplica fallback jerarquico:
-  - `10-3-1` -> `10-3` -> `10`.
+Herramientas para operar con el sistema de despacho de emergencias [central132.cl](https://central132.cl).
 
 ## Estructura
 
-- `manifest.json`: configuracion MV3.
-- `src/content.js`: logica principal de traduccion e inyeccion DOM.
-- `src/styles.css`: estilo de la linea de traduccion.
-- `src/data/codes.full.json`: diccionario local completo.
-- `tools/build-dictionary.mjs`: script para regenerar diccionario desde la fuente.
-
-## Regenerar diccionario
-
-```bash
-node tools/build-dictionary.mjs
+```
+extensions/chrome/   Extensión de Chrome para traducir claves radiales
+frontend/            (próximamente) Interfaz web
+backend/             Lambda + Supabase para recolección de datos
 ```
 
-Ese comando descarga la tabla de:
+## Extensión de Chrome
 
-- `https://noticias.masternet.cl/claves-radiales-articulo-noticias-1440702877.html`
+Traduce claves radiales en los popups de central132.cl a lenguaje ciudadano.
 
-Y genera/actualiza:
+Ver [extensions/chrome/README.md](extensions/chrome/README.md) para instalación y detalles.
 
-- `src/data/codes.full.json`
+## Backend
 
-## Instalar en Chrome
+Lambda (Python) que consulta la API de central132.cl cada 15 minutos y almacena incidentes en Supabase (PostgreSQL + PostGIS). Guarda el dato raw completo + campos extraídos para consultas directas, con historial de cambios cuando se actualizan los carros despachados.
 
-1. Abre `chrome://extensions`.
-2. Activa `Developer mode`.
-3. Click en `Load unpacked`.
-4. Selecciona la carpeta de este repo.
+### Setup
 
-## Validacion rapida
-
-1. Entra a `https://central132.cl/`.
-2. Haz click en un marcador del mapa.
-3. Verifica que aparezca la linea `Clave traducida` en el popup.
-4. Repite con varios marcadores para confirmar que no se duplique la linea.
-
-## Nota de red
-
-Durante uso normal de la extensión no se hacen llamadas a `noticias.masternet.cl`.
-Solo el script `tools/build-dictionary.mjs` usa esa URL cuando tu quieres regenerar el diccionario.
+1. Crear proyecto en [Supabase](https://supabase.com) y ejecutar `backend/sql/schema.sql`.
+2. Configurar variables de entorno en Lambda: `SUPABASE_HOST`, `SUPABASE_PASSWORD`, `SUPABASE_PORT` (6543).
+3. Deployar `backend/lambda_function.py` con dependencias de `backend/requirements.txt`.
+4. Crear regla EventBridge: `rate(15 minutes)` apuntando a la Lambda.
