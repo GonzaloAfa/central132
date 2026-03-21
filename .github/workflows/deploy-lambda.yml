@@ -31,14 +31,10 @@ jobs:
         run: cd dist && zip ../lambda.zip handler.js
 
       - name: Run database migrations
-        env:
-          PGPASSWORD: ${{ secrets.SUPABASE_PASSWORD }}
-          PGHOST: ${{ secrets.SUPABASE_HOST }}
-          PGPORT: ${{ secrets.SUPABASE_PORT }}
-          PGUSER: ${{ secrets.SUPABASE_USER }}
-          PGDATABASE: ${{ secrets.SUPABASE_DB }}
-          PGSSLMODE: require
-        run: psql -4 -f sql/schema.sql
+        run: |
+          IPV4=$(getent ahostsv4 "${{ secrets.SUPABASE_HOST }}" | head -1 | awk '{print $1}')
+          psql "postgresql://${{ secrets.SUPABASE_USER }}:${{ secrets.SUPABASE_PASSWORD }}@${IPV4}:${{ secrets.SUPABASE_PORT }}/${{ secrets.SUPABASE_DB }}?sslmode=require" \
+            -f sql/schema.sql
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
