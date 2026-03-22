@@ -23,6 +23,7 @@ const INITIAL_ZOOM = 11;
 // DOM elements
 const rangeSelect = document.getElementById("range") as HTMLSelectElement;
 const customDates = document.getElementById("custom-dates") as HTMLDivElement;
+const heatmapToggle = document.getElementById("heatmap") as HTMLInputElement;
 const fromInput = document.getElementById("from") as HTMLInputElement;
 const toInput = document.getElementById("to") as HTMLInputElement;
 const comunaSelect = document.getElementById("comuna") as HTMLSelectElement;
@@ -181,6 +182,51 @@ map.on("load", () => {
       "circle-stroke-width": 2,
       "circle-stroke-color": "#fff",
     },
+  });
+
+  // Heatmap layer (hidden by default)
+  map.addLayer(
+    {
+      id: "heatmap",
+      type: "heatmap",
+      source: "incidents",
+      layout: { visibility: "none" },
+      paint: {
+        "heatmap-weight": [
+          "interpolate", ["linear"], ["get", "age_minutes"],
+          0, 1,
+          240, 0.1,
+        ],
+        "heatmap-intensity": [
+          "interpolate", ["linear"], ["zoom"],
+          0, 1,
+          15, 3,
+        ],
+        "heatmap-color": [
+          "interpolate", ["linear"], ["heatmap-density"],
+          0, "rgba(0,0,0,0)",
+          0.2, "#2c1654",
+          0.4, "#e94560",
+          0.6, "#f5a623",
+          0.8, "#f5e642",
+          1, "#ffffff",
+        ],
+        "heatmap-radius": [
+          "interpolate", ["linear"], ["zoom"],
+          0, 2,
+          13, 20,
+          16, 40,
+        ],
+        "heatmap-opacity": 0.7,
+      },
+    },
+    "clusters" // insert below clusters layer
+  );
+
+  // Heatmap toggle
+  heatmapToggle.addEventListener("change", () => {
+    const vis = heatmapToggle.checked ? "visible" : "none";
+    map.setLayoutProperty("heatmap", "visibility", vis);
   });
 
   map.on("click", "clusters", async (e) => {

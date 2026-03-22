@@ -110,6 +110,40 @@ body {
 .dot.green { background: #4caf50; }
 .dot.gray { background: #888888; }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ccc;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.toggle input {
+  accent-color: #e94560;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.credits {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #333;
+  font-size: 11px;
+  color: #666;
+}
+
+.credits a {
+  color: #e94560;
+  text-decoration: none;
+}
+
+.credits a:hover {
+  text-decoration: underline;
+}
+
 #map {
   flex: 1;
 }
