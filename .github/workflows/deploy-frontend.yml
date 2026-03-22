@@ -64,11 +64,17 @@ jobs:
             --output text 2>/dev/null || echo "None")
 
           if [ "$DIST_ID" = "None" ] || [ -z "$DIST_ID" ]; then
-            echo "Creating OAC..."
-            OAC_ID=$(aws cloudfront create-origin-access-control \
-              --origin-access-control-config \
-                Name=central132-oac,SigningProtocol=sigv4,SigningBehavior=always,OriginAccessControlOriginType=s3,Description=central132 \
-              --query 'OriginAccessControl.Id' --output text)
+            echo "Getting or creating OAC..."
+            OAC_ID=$(aws cloudfront list-origin-access-controls \
+              --query "OriginAccessControlList.Items[?Name=='central132-oac'].Id | [0]" \
+              --output text 2>/dev/null || echo "None")
+            if [ "$OAC_ID" = "None" ] || [ -z "$OAC_ID" ]; then
+              OAC_ID=$(aws cloudfront create-origin-access-control \
+                --origin-access-control-config \
+                  Name=central132-oac,SigningProtocol=sigv4,SigningBehavior=always,OriginAccessControlOriginType=s3,Description=central132 \
+                --query 'OriginAccessControl.Id' --output text)
+            fi
+            echo "OAC ID: $OAC_ID"
 
             echo "Creating CloudFront distribution..."
             cat > /tmp/cf-config.json << CFEOF
