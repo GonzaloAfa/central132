@@ -1,6 +1,20 @@
 import maplibregl from "maplibre-gl";
-import { fetchIncidents, fetchFilters, type FeatureCollection } from "./api";
+import { fetchIncidents, fetchFilters, type FeatureCollection, type Feature } from "./api";
 import { translateCode, getTopLabel } from "./codes";
+
+/** Add age_minutes property to each feature for color-coding */
+function enrichFeatures(data: FeatureCollection): FeatureCollection {
+  const now = Date.now();
+  data.features = data.features.map((f: Feature) => {
+    const fecha = new Date(f.properties.fecha).getTime();
+    const ageMin = Math.round((now - fecha) / 60000);
+    return {
+      ...f,
+      properties: { ...f.properties, age_minutes: ageMin },
+    };
+  });
+  return data;
+}
 
 // Santiago center
 const INITIAL_CENTER: [number, number] = [-70.65, -33.45];
@@ -135,14 +149,35 @@ map.on("load", () => {
     paint: { "text-color": "#ffffff" },
   });
 
+  // Point colors by age: red (<10m), yellow (10-60m), green (1-4h), gray (>4h)
   map.addLayer({
     id: "unclustered-point",
     type: "circle",
     source: "incidents",
     filter: ["!", ["has", "point_count"]],
     paint: {
-      "circle-color": "#e94560",
-      "circle-radius": 7,
+      "circle-color": [
+        "step",
+        ["get", "age_minutes"],
+        "#e94560",   // red: 0-10 min
+        10,
+        "#f5a623",   // yellow: 10-60 min
+        60,
+        "#4caf50",   // green: 60-240 min
+        240,
+        "#888888",   // gray: >4h
+      ],
+      "circle-radius": [
+        "step",
+        ["get", "age_minutes"],
+        9,    // red: bigger
+        10,
+        7,    // yellow
+        60,
+        6,    // green
+        240,
+        5,    // gray: smaller
+      ],
       "circle-stroke-width": 2,
       "circle-stroke-color": "#fff",
     },
@@ -212,7 +247,7 @@ async function loadData() {
     const comuna = comunaSelect.value || undefined;
     const clave = claveSelect.value || undefined;
 
-    const data: FeatureCollection = await fetchIncidents(range.from, range.to, comuna, clave);
+    const data = enrichFeatures(await fetchIncidents(range.from, range.to, comuna, clave));
 
     const source = map.getSource("incidents") as maplibregl.GeoJSONSource;
     source.setData(data as any);
