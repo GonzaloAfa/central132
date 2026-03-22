@@ -186,13 +186,13 @@ map.on("load", () => {
       "circle-radius": [
         "step",
         ["get", "age_minutes"],
-        9,    // red: bigger
+        12,   // red: biggest
         10,
-        7,    // yellow
+        10,   // yellow
         60,
-        6,    // green
+        9,    // green
         240,
-        5,    // gray: smaller
+        8,    // gray: smallest
       ],
       "circle-stroke-width": 2,
       "circle-stroke-color": "#fff",
