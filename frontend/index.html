@@ -8,52 +8,61 @@
 </head>
 <body>
   <div id="controls">
-    <h1>Central132</h1>
-    <div class="filter-group">
-      <label for="range">Periodo</label>
-      <select id="range">
-        <option value="4h" selected>Ultimas emergencias</option>
-        <option value="24h">Ultimas 24 horas</option>
-        <option value="7d">Ultimos 7 dias</option>
-        <option value="30d">Ultimos 30 dias</option>
-        <option value="90d">Ultimos 90 dias</option>
-        <option value="custom">Personalizado</option>
-      </select>
-    </div>
-    <div id="custom-dates" class="filter-group" style="display:none">
-      <div class="date-row">
-        <label for="from">Desde</label>
-        <input type="date" id="from" />
+    <div class="controls-top">
+      <h1>Central132</h1>
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label for="range">Periodo</label>
+          <select id="range">
+            <option value="4h" selected>Ultimas emergencias</option>
+            <option value="24h">Ultimas 24 horas</option>
+            <option value="7d">Ultimos 7 dias</option>
+            <option value="30d">Ultimos 30 dias</option>
+            <option value="90d">Ultimos 90 dias</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="comuna">Comuna</label>
+          <select id="comuna">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="clave">Tipo emergencia</label>
+          <select id="clave">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="filter-group filter-action">
+          <label>&nbsp;</label>
+          <button id="search">Buscar</button>
+        </div>
       </div>
-      <div class="date-row">
-        <label for="to">Hasta</label>
-        <input type="date" id="to" />
+      <div id="custom-dates" class="filter-group" style="display:none">
+        <div class="date-row">
+          <label for="from">Desde</label>
+          <input type="date" id="from" />
+        </div>
+        <div class="date-row">
+          <label for="to">Hasta</label>
+          <input type="date" id="to" />
+        </div>
+      </div>
+      <div class="controls-footer">
+        <div id="status"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="dot red"></span> &lt; 10 min</div>
+          <div class="legend-item"><span class="dot yellow"></span> 10 - 60 min</div>
+          <div class="legend-item"><span class="dot green"></span> 1 - 4 hrs</div>
+          <div class="legend-item"><span class="dot gray"></span> &gt; 4 hrs</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="heatmap" />
+          Mapa de calor
+        </label>
       </div>
     </div>
-    <div class="filter-group">
-      <label for="comuna">Comuna</label>
-      <select id="comuna">
-        <option value="">Todas</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label for="clave">Tipo emergencia</label>
-      <select id="clave">
-        <option value="">Todas</option>
-      </select>
-    </div>
-    <button id="search">Buscar</button>
-    <div id="status"></div>
-    <div class="legend">
-      <div class="legend-item"><span class="dot red"></span> &lt; 10 min</div>
-      <div class="legend-item"><span class="dot yellow"></span> 10 - 60 min</div>
-      <div class="legend-item"><span class="dot green"></span> 1 - 4 hrs</div>
-      <div class="legend-item"><span class="dot gray"></span> &gt; 4 hrs</div>
-    </div>
-    <label class="toggle">
-      <input type="checkbox" id="heatmap" />
-      Mapa de calor
-    </label>
     <div class="credits">
       Datos obtenidos de <a href="https://central132.cl/" target="_blank" rel="noopener">central132.cl</a>
     </div>

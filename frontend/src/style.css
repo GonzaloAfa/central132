@@ -6,8 +6,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
+/* --- Sidebar (desktop) --- */
 #controls {
   width: 280px;
   padding: 16px;
@@ -15,15 +17,26 @@ body {
   color: #eee;
   display: flex;
   flex-direction: column;
-  gap: 12px;
   overflow-y: auto;
   flex-shrink: 0;
+}
+
+.controls-top {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 #controls h1 {
   font-size: 18px;
   color: #e94560;
-  margin-bottom: 4px;
+}
+
+/* --- Filters --- */
+.filters-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .filter-group {
@@ -47,10 +60,11 @@ body {
   background: #16213e;
   color: #eee;
   font-size: 14px;
+  width: 100%;
 }
 
 #custom-dates {
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
 }
 
@@ -58,10 +72,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
 }
 
 #search {
-  padding: 10px;
+  padding: 8px 16px;
   background: #e94560;
   color: white;
   border: none;
@@ -70,22 +85,29 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
 }
 
 #search:hover { background: #c73a52; }
 #search:disabled { background: #555; cursor: wait; }
 
+/* --- Footer: status, legend, toggle --- */
+.controls-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 #status {
   font-size: 12px;
   color: #999;
-  min-height: 18px;
+  min-height: 16px;
 }
 
 .legend {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 4px;
   padding-top: 8px;
   border-top: 1px solid #333;
 }
@@ -117,7 +139,6 @@ body {
   font-size: 13px;
   color: #ccc;
   cursor: pointer;
-  margin-top: 4px;
 }
 
 .toggle input {
@@ -144,10 +165,13 @@ body {
   text-decoration: underline;
 }
 
+/* --- Map --- */
 #map {
   flex: 1;
+  min-width: 0;
 }
 
+/* --- Popups --- */
 .maplibregl-popup-content {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   padding: 12px;
@@ -183,17 +207,115 @@ body {
   min-width: 65px;
 }
 
+/* --- Mobile --- */
 @media (max-width: 640px) {
-  body { flex-direction: column; }
+  body {
+    flex-direction: column;
+  }
+
   #controls {
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 8px;
+    padding: 10px 12px;
+    overflow-y: visible;
+    flex-shrink: 0;
+  }
+
+  .controls-top {
     gap: 8px;
   }
-  #controls h1 { width: 100%; }
-  .filter-group { flex: 1; min-width: 120px; }
-  #search { flex: none; }
-  #map { flex: 1; min-height: 300px; }
+
+  #controls h1 {
+    font-size: 15px;
+  }
+
+  /* 2x2 grid for filters */
+  .filters-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .filter-group label {
+    font-size: 10px;
+  }
+
+  .filter-group input,
+  .filter-group select {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .filter-action label {
+    display: none;
+  }
+
+  #search {
+    padding: 6px;
+    font-size: 12px;
+    height: 100%;
+  }
+
+  #custom-dates {
+    display: none;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  /* Footer: inline */
+  .controls-footer {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+  }
+
+  #status {
+    font-size: 11px;
+    min-height: auto;
+    width: 100%;
+  }
+
+  .legend {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .legend-item {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .toggle {
+    font-size: 11px;
+  }
+
+  .toggle input {
+    width: 14px;
+    height: 14px;
+  }
+
+  .credits {
+    padding-top: 6px;
+    font-size: 10px;
+  }
+
+  #map {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .maplibregl-popup-content {
+    max-width: 260px;
+    font-size: 12px;
+    padding: 10px;
+  }
 }
