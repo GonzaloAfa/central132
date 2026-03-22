@@ -21,6 +21,9 @@ const INITIAL_CENTER: [number, number] = [-70.65, -33.45];
 const INITIAL_ZOOM = 11;
 
 // DOM elements
+const menuToggle = document.getElementById("menu-toggle") as HTMLButtonElement;
+const menuStatus = document.getElementById("menu-status") as HTMLSpanElement;
+const controls = document.getElementById("controls") as HTMLDivElement;
 const rangeSelect = document.getElementById("range") as HTMLSelectElement;
 const customDates = document.getElementById("custom-dates") as HTMLDivElement;
 const heatmapToggle = document.getElementById("heatmap") as HTMLInputElement;
@@ -30,6 +33,18 @@ const comunaSelect = document.getElementById("comuna") as HTMLSelectElement;
 const claveSelect = document.getElementById("clave") as HTMLSelectElement;
 const searchBtn = document.getElementById("search") as HTMLButtonElement;
 const statusEl = document.getElementById("status") as HTMLDivElement;
+
+// Mobile menu toggle
+menuToggle.addEventListener("click", () => {
+  controls.classList.toggle("open");
+});
+
+// Close menu after search on mobile
+function closeMobileMenu() {
+  if (window.innerWidth <= 640) {
+    controls.classList.remove("open");
+  }
+}
 
 // Range presets
 function getDateRange(): { from: string; to: string } {
@@ -301,6 +316,8 @@ async function loadData() {
     let msg = `${data.metadata.count} incidentes`;
     if (data.metadata.truncated) msg += " (resultados limitados, reduce el rango)";
     statusEl.textContent = msg;
+    menuStatus.textContent = msg;
+    closeMobileMenu();
   } catch (err) {
     statusEl.textContent = `Error: ${err instanceof Error ? err.message : "desconocido"}`;
   } finally {

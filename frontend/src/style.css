@@ -9,6 +9,11 @@ body {
   overflow: hidden;
 }
 
+/* --- Menu toggle (mobile only) --- */
+#menu-toggle {
+  display: none;
+}
+
 /* --- Sidebar (desktop) --- */
 #controls {
   width: 280px;
@@ -210,39 +215,79 @@ body {
 /* --- Mobile --- */
 @media (max-width: 640px) {
   body {
-    flex-direction: column;
+    position: relative;
   }
 
-  #controls {
-    width: 100%;
-    padding: 10px 12px;
-    overflow-y: visible;
+  /* Floating menu button */
+  #menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 20;
+    background: #1a1a2e;
+    color: #eee;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  #menu-toggle svg {
     flex-shrink: 0;
   }
 
+  #menu-status {
+    color: #999;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* Slide-down drawer */
+  #controls {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    width: 100%;
+    max-height: 80vh;
+    padding: 16px;
+    overflow-y: auto;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+
+  #controls.open {
+    transform: translateY(0);
+  }
+
   .controls-top {
-    gap: 8px;
+    gap: 10px;
   }
 
   #controls h1 {
-    font-size: 15px;
+    font-size: 16px;
   }
 
-  /* 2x2 grid for filters */
   .filters-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 8px;
   }
 
   .filter-group label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .filter-group input,
   .filter-group select {
-    padding: 6px;
-    font-size: 12px;
+    padding: 8px;
+    font-size: 13px;
   }
 
   .filter-action label {
@@ -250,19 +295,17 @@ body {
   }
 
   #search {
-    padding: 6px;
-    font-size: 12px;
+    padding: 8px;
+    font-size: 13px;
     height: 100%;
   }
 
   #custom-dates {
-    display: none;
     grid-column: 1 / -1;
     flex-direction: row;
-    gap: 6px;
+    gap: 8px;
   }
 
-  /* Footer: inline */
   .controls-footer {
     flex-direction: row;
     flex-wrap: wrap;
@@ -284,33 +327,17 @@ body {
     border-top: none;
   }
 
-  .legend-item {
-    font-size: 10px;
-    gap: 4px;
-  }
+  .legend-item { font-size: 10px; gap: 4px; }
+  .dot { width: 8px; height: 8px; }
+  .toggle { font-size: 12px; }
+  .toggle input { width: 14px; height: 14px; }
+  .credits { padding-top: 8px; font-size: 10px; }
 
-  .dot {
-    width: 8px;
-    height: 8px;
-  }
-
-  .toggle {
-    font-size: 11px;
-  }
-
-  .toggle input {
-    width: 14px;
-    height: 14px;
-  }
-
-  .credits {
-    padding-top: 6px;
-    font-size: 10px;
-  }
-
+  /* Map fills entire screen */
   #map {
-    flex: 1;
-    min-height: 0;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
   }
 
   .maplibregl-popup-content {
