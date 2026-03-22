@@ -82,7 +82,7 @@ async function handleIncidents(params: Record<string, string>) {
   }
 
   const filter: Filter<Document> = {
-    "properties.fecha": { $gte: from, $lte: to },
+    "properties.fecha": { $gte: fromDate, $lte: toDate },
   };
 
   if (params.comuna) {

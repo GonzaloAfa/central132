@@ -75,9 +75,13 @@ export const handler: ScheduledHandler = async () => {
   for (const feature of features) {
     const incidentId = feature.properties.id;
 
-    // Build document with GeoJSON location for geo queries
+    // Parse fecha string "2026-03-21 18:07:50" to Date
+    const fechaDate = new Date(feature.properties.fecha.replace(" ", "T") + "-03:00");
+
+    // Build document with GeoJSON location and proper Date types
     const doc = {
       ...feature,
+      properties: { ...feature.properties, fecha: fechaDate },
       location: feature.geometry,
       first_seen_at: new Date(),
       last_seen_at: new Date(),
@@ -112,7 +116,7 @@ export const handler: ScheduledHandler = async () => {
         { "properties.id": incidentId },
         {
           $set: {
-            properties: feature.properties,
+            properties: { ...feature.properties, fecha: fechaDate },
             geometry: feature.geometry,
             location: feature.geometry,
             raw_feature: feature,
