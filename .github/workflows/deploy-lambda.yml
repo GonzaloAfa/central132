@@ -111,13 +111,17 @@ jobs:
             --function-name $FUNCTION_NAME \
             --auth-type NONE \
             2>/dev/null || true
+          # Recreate public access permission
+          aws lambda remove-permission \
+            --function-name $FUNCTION_NAME \
+            --statement-id public-access \
+            2>/dev/null || true
           aws lambda add-permission \
             --function-name $FUNCTION_NAME \
             --statement-id public-access \
             --action lambda:InvokeFunctionUrl \
             --principal "*" \
-            --function-url-auth-type NONE \
-            2>/dev/null || true
+            --function-url-auth-type NONE
 
           API_URL=$(aws lambda get-function-url-config --function-name $FUNCTION_NAME --query 'FunctionUrl' --output text)
           echo "API Function URL: $API_URL"
